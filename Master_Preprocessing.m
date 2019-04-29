@@ -1,0 +1,135 @@
+%-------------------------------------------------------------------------%
+% Setup code directories
+%-------------------------------------------------------------------------%
+clc; close all; clear; global RUN;
+
+cod_dir='F:\Data2\Geib\EEG\';
+addpath(genpath(fullfile(cod_dir,'EEG_v1-master')));
+addpath(genpath(fullfile(cod_dir,'function_files-master')));
+addpath(fullfile(cod_dir,'EEG_toolboxes','eeglab14_1_0b'));
+addpath(fullfile(cod_dir,'EEG_toolboxes','fieldtrip-20170430'));
+%-------------------------------------------------------------------------%
+% Setup
+%-------------------------------------------------------------------------%
+wrk_dir='F:\Data2\Geib\DynamicReactivation\';
+
+%=========================================================================%
+%% Variable Set
+%=========================================================================%
+%------------------------Rarely Changed-----------------------------------%
+% .dir.study         => Unique study string
+% .dir.ver           => Analysis version, determines output directories
+% .dir.hc            => Determines how to examine behave
+RUN.dir.study='DR';
+RUN.dir.ver='v0';
+RUN.dir.resp=1;  % Response locking
+
+%-----------------------Common Changes------------------------------------%
+% .dir.subjects      => cell list of included subjects
+% .dir.sess          => enc or ret
+% .dir.scenario      => 'ica' 'pre' 'plt'
+% .dir.overwrite     => determines if output is overwritten
+RUN.dir.subjects={'1000','1001','3781','3782','108','112','113'}; 
+RUN.dir.plot=true(length(RUN.dir.subjects),1);
+% RUN.dir.plot([1:4 7])=false; 
+RUN.dir.scenario='dra';
+
+RUN.dir.overwrite=1;
+%-----------------------Directory Local-----------------------------------%
+% .dir.raw           => location of raw data
+% .dir.pre           => location of preprocessed data
+% .dir.pro           => location of processed data
+% .dir.QAL           => QA directory
+RUN.dir.raw=fullfile(wrk_dir,'raw');
+RUN.dir.pre=fullfile(wrk_dir,'pre',RUN.dir.ver);
+RUN.dir.pro=fullfile(wrk_dir,'pro',RUN.dir.ver);
+RUN.dir.QAL=fullfile(wrk_dir,'QA',RUN.dir.ver);
+%-----------------------Subject Setup-------------------------------------%
+eeg_DR_setup()
+%=========================================================================%
+%% RUN (DO NOT CHANGE)
+%=========================================================================%
+switch RUN.dir.scenario
+    case 'ica'
+        eeg_icrun_vDR;
+    case 'pre'
+        eeg_pre_vDR;
+    case 'frq'
+        eeg_frq_vDR;
+    case 'avg'
+         eeg_avg_vDR;
+    case 'dra'
+        %----------%
+% Struct t
+%                                
+%----------%
+% t.beg and t.end are =< and >=
+t.TRN.EEG=.025;   % 25 ms EEG bins
+% we know force this to align with the frequency data
+t.TRN.cov=.050;   % 50 ms sample distance
+t.TRN.beg=-1; t.TRN.end=3.00; t.TRN.trn=.175;
+
+t.TST.beg=-3; t.TST.end=1.00; 
+t.TST.EEG=0.025;
+t.TST.cov=0.050;
+t.TRN.sf=250; t.TST.sf=250;
+%-------------------------------------------------------------------------%
+% Post Christmas
+%-------------------------------------------------------------------------%
+xmn.chan=true(1,64);  
+
+xmn.Train_str=''; 
+xmn.Test_str='_resp';
+xmn.lambda=100; 
+
+DynRxn_v4(xmn,t);
+return;
+%-------------------------------------------------------------------------%
+% Pre Christmas
+%-------------------------------------------------------------------------%
+% Struct xmn
+A=setdiff(1:64,31);
+xmn.chan=false(1,64); xmn.chan(A)=true; clear A;
+xmn.str='all_resp_early'; % Except LVEOG
+xmn.Train_str=''; xmn.Test_str='_resp';
+% xmn.Train_str=''; xmn.Test_str='';
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=1; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn_v3(xmn,t);
+xmn.data='EtoR'; display(xmn.data); xmn.lambda=1000; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=10000; DynRxn_v3(xmn,t);
+xmn.str='all_resp_late'; % Except LVEOG
+t.beg=-3; t.end=1; t.trn=2.525;
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=1; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn_v3(xmn,t);
+xmn.data='EtoR'; display(xmn.data); xmn.lambda=1000; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=10000; DynRxn_v3(xmn,t);
+
+xmn.str='all_resp_mid'; % Except LVEOG
+t.beg=-3; t.end=1; t.trn=.250;
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=1; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn_v3(xmn,t);
+xmn.data='EtoR'; display(xmn.data); xmn.lambda=1000; DynRxn_v3(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=10000; DynRxn_v3(xmn,t);
+
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=1000; DynRxn_v2(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn_v2(xmn,t);
+
+% A=setdiff(1:64,1:31);
+% xmn.chan=false(1,64); xmn.chan(A)=true; clear A;
+% xmn.str='back';
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=0.01; DynRxn(xmn,t);
+% xmn.data='EtoE'; display(xmn.data); xmn.lambda=0.01; DynRxn(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn(xmn,t);
+% xmn.data='EtoE'; display(xmn.data); xmn.lambda=100; DynRxn(xmn,t);
+% 
+% A=setdiff(1:64,31:64);
+% xmn.chan=false(1,64); xmn.chan(A)=true; clear A;
+% xmn.str='front';
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=0.01; DynRxn(xmn,t);
+% xmn.data='EtoE'; display(xmn.data); xmn.lambda=0.01; DynRxn(xmn,t);
+% xmn.data='EtoR'; display(xmn.data); xmn.lambda=100; DynRxn(xmn,t);
+% xmn.data='EtoE'; display(xmn.data); xmn.lambda=100; DynRxn(xmn,t);
+
+    otherwise, 
+        display('Kindly choose a valid scenario');
+end
